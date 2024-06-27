@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { lineSpinner } from "ldrs";
+import { useState } from "react";
 
 const tempMovieData = [
   {
@@ -50,25 +49,9 @@ const tempWatchedData = [
 
 const average = (arr) => arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY = "61d31c5b";
-
-lineSpinner.register();
-
 export default function App() {
-  const [movies, setMovies] = useState([]);
+  const [movies, setMovies] = useState(tempMovieData);
   const [watched, setWatched] = useState(tempWatchedData);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(function () {
-    async function fetchMovies() {
-      setIsLoading(true);
-      const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=interstellar`);
-      const data = await res.json();
-      setMovies(data.Search);
-      setIsLoading(false);
-    }
-    fetchMovies();
-  }, []);
 
   return (
     <>
@@ -79,7 +62,9 @@ export default function App() {
       </NavBar>
 
       <Main>
-        <Box>{isLoading ? <Loader /> : <MovieList movies={movies}></MovieList>}</Box>
+        <Box>
+          <MovieList movies={movies}></MovieList>
+        </Box>
 
         <Box>
           <WatchedSummary watched={watched} />
@@ -120,8 +105,7 @@ function Search() {
 function NumResults({ movies }) {
   return (
     <p className="num-results">
-      {/* Found <strong>{movies.length}</strong> results */}
-      Found <strong>x</strong> results
+      Found <strong>{movies.length}</strong> results
     </p>
   );
 }
@@ -139,14 +123,6 @@ function Box({ children }) {
         {isOpen ? "–" : "+"}
       </button>
       {isOpen && children}
-    </div>
-  );
-}
-
-function Loader() {
-  return (
-    <div className="loading">
-      <l-line-spinner color={"white"} size={50} stroke={3.5} />
     </div>
   );
 }
