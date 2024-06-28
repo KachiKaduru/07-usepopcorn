@@ -56,7 +56,10 @@ body {
   border-radius: 0.9rem;
   overflow: scroll;
   position: relative;
-  display: grid;
+  /* display: grid; */
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center; */
 }
 
 .loader {
@@ -68,7 +71,10 @@ body {
 }
 
 .loading {
-  place-self: center;
+  /* place-self: center; */
+  justify-content: center;
+  align-self: center;
+  translate: 0% 200%;
 }
 
 .error {
