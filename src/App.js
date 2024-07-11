@@ -4,8 +4,10 @@ import StarRating from "./StarRating";
 
 const average = (arr) => arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
+//API KEY
 const KEY = "61d31c5b";
 
+//LOADER SPINNER
 lineSpinner.register();
 
 export default function App() {
@@ -13,41 +15,67 @@ export default function App() {
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
 
+  //TO SET THE CLICKED MOVIE
   function handleSelectedMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
   }
 
+  // TO COLSE THE MOVIE
   function handleCloseMovie() {
     setSelectedId(null);
   }
 
+  // TO ADD A MOVIE TO THE 'WATCHED' ARRAY
   function handleAddWatched(movie) {
     setWatched((watched) => [...watched, movie]);
   }
 
+  // TO DELETE A MOVIE
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
 
   useEffect(
     function () {
+      const controller = new AbortController();
+
       async function fetchMovies() {
-        setIsLoading(true);
-        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`);
-        const data = await res.json();
-        setMovies(data.Search);
-        // console.log(data.Search);
-        setIsLoading(false);
+        try {
+          setIsLoading(true);
+          setError("");
+          const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`, {
+            signal: controller.signal,
+          });
+          const data = await res.json();
+
+          if (!res.ok) throw new Error("Something went wrong with fetching movies");
+          if (data.Response === "False") throw new Error(data.Error);
+
+          setMovies(data.Search);
+          setError("");
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            setError(err.message);
+          }
+        } finally {
+          setIsLoading(false);
+        }
       }
 
       if (query.length < 3) {
         setMovies([]);
+        setError("");
         return;
       }
 
       fetchMovies();
+
+      return function () {
+        controller.abort();
+      };
     },
     [query]
   );
@@ -62,11 +90,14 @@ export default function App() {
 
       <Main>
         <Box>
-          {isLoading ? (
+          {/* {isLoading ? (
             <Loader />
           ) : (
-            <MovieList movies={movies} onSelect={handleSelectedMovie}></MovieList>
-          )}
+             <MovieList movies={movies} onSelect={handleSelectedMovie} />
+          )} */}
+          {isLoading && <Loader />}
+          {!isLoading && !error && <MovieList movies={movies} onSelect={handleSelectedMovie} />}
+          {error && <ErrorMessage message={error} />}
         </Box>
 
         <Box>
@@ -147,6 +178,14 @@ function Loader() {
   );
 }
 
+function ErrorMessage({ message }) {
+  return (
+    <p className="error">
+      <span>❌</span> {message}
+    </p>
+  );
+}
+
 function MovieList({ movies, onSelect }) {
   return (
     <ul className="list list-movies">
@@ -212,7 +251,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     function () {
       setIsLoading(true);
       async function getMovieDetails() {
-        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}`);
+        const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}&plot=full`);
         const data = await res.json();
         setMovie(data);
         setIsLoading(false);
@@ -279,8 +318,10 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
             <p>
               <em>{plot}</em>
             </p>
-            <p>Starring {actors}</p>
-            <p>Directed by {director}</p>
+            <p>Starring: {actors}</p>
+            <p>
+              Directed by: <strong>{director}</strong>
+            </p>
           </section>
         </>
       )}
